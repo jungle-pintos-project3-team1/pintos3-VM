@@ -28,6 +28,12 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+//==================================================================
+//				Project 1 - Alarm Clock
+//------------------------------------------------------------------
+static struct list sleep_list; // 잠든 스레드가 저장되는 리스트 잠에서 깬 스레드가 ready_list로 들어가게 된다. 
+//==================================================================
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -108,6 +114,13 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	
+	//==================================================================
+	//				Project 1 - Alarm Clock
+	//------------------------------------------------------------------
+	list_init (&sleep_list); // sleep_list 초기화 
+	//==================================================================
+
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -207,6 +220,12 @@ thread_create (const char *name, int priority,
 	/* Add to run queue. */
 	thread_unblock (t);
 
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	ThreadYieldByPriority();
+	//==================================================================
+
 	return tid;
 }
 
@@ -240,7 +259,15 @@ thread_unblock (struct thread *t) {
 
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
+
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	// 우선순위 기준으로 스레드를 실행하기 위해서 정렬된 상태로 ready_list에 넣어준다. 
+	list_insert_ordered(&ready_list, &t->elem, CompareThreadByPriority, NULL);
+	//list_push_back (&ready_list, &t->elem);
+	//==================================================================
+
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -302,8 +329,17 @@ thread_yield (void) {
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
+
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	/*	기존의 코드는 그냥 push back을 사용해서 FIFO 방식으로 사용되고 있었다.
+		우선순위 기반으로 삽입하기위해서 정렬 함수를 구현하고 정렬 삽입을 이용한다. */
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
+		list_insert_ordered(&ready_list, &curr->elem, CompareThreadByPriority, NULL);
+		//list_push_back (&ready_list, &curr->elem);
+
+	//==================================================================
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 }
@@ -312,6 +348,11 @@ thread_yield (void) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	ThreadYieldByPriority();
+	//==================================================================
 }
 
 /* Returns the current thread's priority. */
@@ -588,3 +629,87 @@ allocate_tid (void) {
 
 	return tid;
 }
+
+
+//==================================================================
+//				Project 1 - Alarm Clock
+//------------------------------------------------------------------
+
+void ThreadSleep(int64_t ticks)
+{
+	struct thread* cur = thread_current();
+	ASSERT(idle_thread != cur) // 현재 스레드가 idle 스레드가 아니여야 함
+
+	enum intr_level old_level = intr_disable(); // 인터럽트를 비활성화 시키면서 저장해둔다. 
+
+	cur->wakeup_ticks = ticks; // 깨어날 시각 저장
+	list_insert_ordered(&sleep_list, &cur->elem, CompareThreadByTicks, NULL); // ticks을 기준으로 정렬하면서 sleep_list에 삽입
+	thread_block(); // 현재 스레드 재우기
+
+	intr_set_level(old_level); // 비활성화 시킨 인터럽트를 원래 상태로 변경
+}
+
+// l의 ticks가 r의 ticks보다 작으면 true
+bool CompareThreadByTicks(const struct list_elem* l, const struct list_elem* r, void *aux UNUSED)
+{
+	return list_entry(l, struct thread, elem)->wakeup_ticks < list_entry(r, struct thread, elem)->wakeup_ticks;
+}
+
+void ThreadWakeUp(int64_t current_ticks)
+{
+	enum intr_level old_level = intr_disable(); // 인터럽트를 비활성화 시키면서 저장
+
+	struct list_elem* iter_sleep_list = list_begin(&sleep_list); // sleep_list를 순회할 변수
+
+	while(iter_sleep_list != list_end(&sleep_list))
+	{
+		struct thread* cur_thread = list_entry(iter_sleep_list, struct thread, elem); // 현재 검사중인 elem의 스레드
+
+		if(current_ticks >= cur_thread->wakeup_ticks) // 깨어날 시간이라면 
+		{
+			iter_sleep_list = list_remove(iter_sleep_list); // sleep_list에서 제거 
+			thread_unblock(cur_thread); // ready_list로 이동
+
+			//==================================================================
+			//				Project 1 - Priority Scheduling
+			//------------------------------------------------------------------
+			ThreadYieldByPriority();
+			//==================================================================			
+		}
+		else // 깰 시간이 아니라면 
+		{
+			//iter_sleep_list = list_next(iter_sleep_list); // 다음 elem으로 
+			break;
+		}
+	}
+	intr_set_level(old_level); // 비활성화 시킨 인터럽트를 원래대로 되돌림 
+}
+//==================================================================
+
+
+//==================================================================
+//				Project 1 - Priority Scheduling
+//------------------------------------------------------------------
+
+// l의 우선순위가 r의 우선순위보다 높다면 true
+bool CompareThreadByPriority(const struct list_elem* l, const struct list_elem* r, void *aux UNUSED)
+{
+	return list_entry(l, struct thread, elem)->priority > list_entry(r, struct thread, elem)->priority;
+}
+
+
+void ThreadYieldByPriority()
+{
+	if(idle_thread == thread_current())
+		return;
+	
+	if(list_empty(&ready_list))
+		return;
+	
+	struct thread* ready = list_entry(list_front(&ready_list), struct thread, elem);
+	if(thread_get_priority() < ready->priority) // ready_list에 현재 실행중인 스레드보다 우선순위가 높은 스레드가 있으면
+		thread_yield();
+}
+
+
+//==================================================================

@@ -92,6 +92,12 @@ struct thread {
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
 
+	//==================================================================
+	//				Project 1 - Alarm Clock
+	//------------------------------------------------------------------
+	int64_t wakeup_ticks;
+	//==================================================================
+
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
 
@@ -143,4 +149,24 @@ int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
 
+//==================================================================
+//				Project 1 - Alarm Clock
+//------------------------------------------------------------------
+/* 잠들 스레드를 sleep_list에 삽입해준다.
+	이 때 ticks가 작은 스레드가 앞부분에 위치하도록 정렬하여 삽입한다. */
+void ThreadSleep(int64_t ticks);
+
+// ticks를 기준으로 정렬할 때 사용하는 함수
+bool CompareThreadByTicks(const struct list_elem* l, const struct list_elem* r, void *aux UNUSED);
+
+// sleep_list를 확인해서 꺠어날 스레드들을 ready_list로 옮겨주는 함수 
+void ThreadWakeUp(int64_t current_ticks);
+//==================================================================
+
+
+//==================================================================
+//				Project 1 - Priority Scheduling
+//------------------------------------------------------------------
+bool CompareThreadByPriority(const struct list_elem* l, const struct list_elem* r, void *aux UNUSED);
+//==================================================================
 #endif /* threads/thread.h */
