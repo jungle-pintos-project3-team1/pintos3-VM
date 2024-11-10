@@ -152,6 +152,7 @@ void do_iret (struct intr_frame *tf);
 //==================================================================
 //				Project 1 - Alarm Clock
 //------------------------------------------------------------------
+
 /* 잠들 스레드를 sleep_list에 삽입해준다.
 	이 때 ticks가 작은 스레드가 앞부분에 위치하도록 정렬하여 삽입한다. */
 void ThreadSleep(int64_t ticks);
@@ -161,12 +162,20 @@ bool CompareThreadByTicks(const struct list_elem* l, const struct list_elem* r, 
 
 // sleep_list를 확인해서 꺠어날 스레드들을 ready_list로 옮겨주는 함수 
 void ThreadWakeUp(int64_t current_ticks);
+
 //==================================================================
 
 
 //==================================================================
 //				Project 1 - Priority Scheduling
 //------------------------------------------------------------------
+
+// 우선순위를 기준으로 정렬할 때 사용하는 함수
 bool CompareThreadByPriority(const struct list_elem* l, const struct list_elem* r, void *aux UNUSED);
+
+// yield를 할 때 우선순위를 기준으로 양보하는 함수 
+void ThreadYieldByPriority();
+
 //==================================================================
+
 #endif /* threads/thread.h */

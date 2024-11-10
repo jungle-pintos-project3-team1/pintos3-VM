@@ -678,8 +678,7 @@ void ThreadWakeUp(int64_t current_ticks)
 		}
 		else // 깰 시간이 아니라면 
 		{
-			//iter_sleep_list = list_next(iter_sleep_list); // 다음 elem으로 
-			break;
+			iter_sleep_list = list_next(iter_sleep_list); // 다음 elem으로 
 		}
 	}
 	intr_set_level(old_level); // 비활성화 시킨 인터럽트를 원래대로 되돌림 

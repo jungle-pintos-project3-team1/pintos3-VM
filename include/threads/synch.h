@@ -3,6 +3,7 @@
 
 #include <list.h>
 #include <stdbool.h>
+#include <debug.h>
 
 /* A counting semaphore. */
 struct semaphore {
@@ -37,6 +38,12 @@ void cond_init (struct condition *);
 void cond_wait (struct condition *, struct lock *);
 void cond_signal (struct condition *, struct lock *);
 void cond_broadcast (struct condition *, struct lock *);
+
+//==================================================================
+//				Project 1 - Priority Scheduling
+//------------------------------------------------------------------
+bool CompareSemaphoreByPriority(const struct list_elem* l, const struct list_elem* r, void* aux UNUSED);
+//==================================================================
 
 /* Optimization barrier.
  *

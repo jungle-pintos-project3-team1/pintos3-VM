@@ -66,7 +66,19 @@ sema_down (struct semaphore *sema) {
 
 	old_level = intr_disable ();
 	while (sema->value == 0) {
-		list_push_back (&sema->waiters, &thread_current ()->elem);
+
+		//==================================================================
+		//				Project 1 - Priority Scheduling
+		//------------------------------------------------------------------
+		/* 	lock을 기다리면서 대기하고 있는 스레드가 여러개인 경우에 lock을 획득할 수 있어졌을 때 
+			Priority가 가장 높은 스레드가 먼저 깨어나야 한다. 
+			waiters에 스레드가 삽입 될 때 Priority 기준으로 정렬이 되어 삽입되도록 코드를 수정
+			semaphore에 추가되는 elem들은 스레드이기 때문에 스레드에서 사용했던 
+			CompareThreadByPriority 함수를 그대로 사용 가능하다.*/
+		list_insert_ordered(&sema->waiters, &thread_current()->elem, CompareThreadByPriority, NULL);
+		//list_push_back (&sema->waiters, &thread_current ()->elem);
+		//==================================================================
+
 		thread_block ();
 	}
 	sema->value--;
@@ -109,10 +121,27 @@ sema_up (struct semaphore *sema) {
 	ASSERT (sema != NULL);
 
 	old_level = intr_disable ();
+
 	if (!list_empty (&sema->waiters))
+	{
+		//==================================================================
+		//				Project 1 - Priority Scheduling
+		//------------------------------------------------------------------
+		/* 	waiters 리스트에 있던 동안에 우선순위에 변경이 생겼을 가능성(donation에 의해)을 생각해서
+			waiters 리스트를 다시 내림차순으로 정렬해준다. */
+		list_sort(&sema->waiters, CompareThreadByPriority, NULL);
+		//==================================================================
 		thread_unblock (list_entry (list_pop_front (&sema->waiters),
 					struct thread, elem));
+	}
 	sema->value++;
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	/* 	위에서 unblock된 스레드가 현재 running 스레드보다 우선순위가 높을 수 있기 때문에 
+		우선순위를 기준으로 CPU선점이 일어나도록 해준다.*/
+	ThreadYieldByPriority();
+	//==================================================================
 	intr_set_level (old_level);
 }
 
@@ -282,7 +311,15 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	sema_init (&waiter.semaphore, 0);
-	list_push_back (&cond->waiters, &waiter.elem);
+
+	//==================================================================
+	//				Project 1 - Priority Scheduling
+	//------------------------------------------------------------------
+	/* cond의 waiters 리스트에 들어있는 세마포어도 우선순위를 기반으로 정렬되게 삽입한다.*/
+	list_insert_ordered(&cond->waiters, &waiter.elem, CompareSemaphoreByPriority, NULL);
+	//list_push_back (&cond->waiters, &waiter.elem);
+	//==================================================================
+
 	lock_release (lock);
 	sema_down (&waiter.semaphore);
 	lock_acquire (lock);
@@ -303,8 +340,16 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	if (!list_empty (&cond->waiters))
+	{
+		//==================================================================
+		//				Project 1 - Priority Scheduling
+		//------------------------------------------------------------------
+		/* 깨우기 전에 wait 도중에 Priority가 바뀌었을 수 있으니 다시 정렬 한다. */
+		list_sort(&cond->waiters, CompareSemaphoreByPriority, NULL);
+		//==================================================================
 		sema_up (&list_entry (list_pop_front (&cond->waiters),
 					struct semaphore_elem, elem)->semaphore);
+	}
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by
@@ -321,3 +366,29 @@ cond_broadcast (struct condition *cond, struct lock *lock) {
 	while (!list_empty (&cond->waiters))
 		cond_signal (cond, lock);
 }
+
+
+//==================================================================
+//				Project 1 - Priority Scheduling
+//------------------------------------------------------------------
+/* 	condition variables를 사용할 때 우선순위를 기준으로 정렬하기 위한 함수
+	thread.h에 구현했던 CompareThreadByPriority를 사용할수 없는 이유는 
+	condition variables를 사용하는 함수에서 cond의 waiters 리스트에 넣는 요소가 
+	스레드가 아닌 semaphore_elem이기 때문이다. 
+	이 때 각 세마포어의 waiters는 스레드의 우선순위를 기반으로 이미 정렬되어있는 상태기 때문에 
+	세마포어의 waiters의 가장 앞에 있는 스레드의 우선순위만 비교해주면 된다.*/
+bool CompareSemaphoreByPriority(const struct list_elem* l, const struct list_elem* r, void* aux UNUSED)
+{
+	struct semaphore_elem* sema_l = list_entry(l, struct semaphore_elem, elem);
+	struct semaphore_elem* sema_r = list_entry(r, struct semaphore_elem, elem);
+
+	struct list* waiters_l = &(sema_l->semaphore.waiters);
+	struct list* waiters_r = &(sema_r->semaphore.waiters);
+
+	struct thread* thread_l = list_entry(list_begin(waiters_l), struct thread, elem);
+	struct thread* thread_r = list_entry(list_begin(waiters_r), struct thread, elem);
+
+	return thread_l->priority > thread_r->priority;
+}
+
+//==================================================================
