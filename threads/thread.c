@@ -823,20 +823,6 @@ void ThreadYieldByPriority()
 		else
 			thread_yield();	
 	}
-
-	//  if (!intr_context())
-    // {
-    //     if (!list_empty(&ready_list))
-    //     {
-    //         struct thread* ready = list_entry(list_front(&ready_list), struct thread, elem);
-    //         if (thread_current()->priority < ready->priority)
-    //             thread_yield();
-    //     }
-    // }
-    // else
-    // {
-    //     intr_yield_on_return();
-    // }
 }
 
 
@@ -866,20 +852,6 @@ void DonatePriority()
 	//  	holder->priority = cur_thread->priority;
 	//  	cur_thread = holder;
 	// }
-
-	// struct thread *curr = thread_current(); // 검사중인 스레드
-    // struct thread *holder;                    // curr이 원하는 락을 가진드스레드
-
-    // int priority = curr->priority;
-
-    // for (int i = 0; i < 8; i++)
-    // {
-    //     if (curr->wait_on_lock == NULL) // 더이상 중첩되지 않았으면 종료
-    //         return;
-    //     holder = curr->wait_on_lock->holder;
-    //     holder->priority = priority;
-    //     curr = holder;
-    // }
 }
 
 
@@ -926,22 +898,6 @@ void mlfqsCalculatePriority (struct thread *th)
 		return;
 	
 	th->priority = fp_to_int(add_mixed(div_mixed(th->recent_cpu, -4), PRI_MAX - th->nice * 2));
-
-	// /* 해당 스레드가 idle_thread 가 아닌지 검사 */
-	// /*priority계산식을 구현 (fixed_point.h의 계산함수 이용)*/
-    // if (th != idle_thread)
-	// {
-    //     int rec_by_4 = div_mixed(th->recent_cpu, 4);
-    //     int nice2 = 2 * th->nice;
-    //     int to_sub = add_mixed(rec_by_4, nice2);
-    //     int tmp = sub_mixed(to_sub, (int)PRI_MAX);
-    //     int pri_result = fp_to_int(sub_fp(0, tmp));
-    //     if (pri_result < PRI_MIN)
-    //         pri_result = PRI_MIN;
-    //     if (pri_result > PRI_MAX)
-    //         pri_result = PRI_MAX;
-    //     th->priority = pri_result;
-	// }
 }
 
 void mlfqsCalculateRecentCPU (struct thread *th)
@@ -1007,14 +963,6 @@ void mlfqsRecalculatePrioirty (void)
     }
 
 	ThreadYieldByPriority();
-    /* 현재 스레드의 우선순위가 낮아졌을 경우 선점 */
-    // if (thread_current()->priority < old_priority)
-    // {
-    //     if (intr_context())
-    //         intr_yield_on_return();
-    //     else
-    //         thread_yield();
-    // }
 }
 
 //==================================================================
