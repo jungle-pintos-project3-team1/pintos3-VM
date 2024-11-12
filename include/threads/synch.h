@@ -45,6 +45,11 @@ void cond_broadcast (struct condition *, struct lock *);
 bool CompareSemaphoreByPriority(const struct list_elem* l, const struct list_elem* r, void* aux UNUSED);
 //==================================================================
 
+//==================================================================
+//				Project 1 - Priority Donation
+//------------------------------------------------------------------
+bool CompareDonationsByPriority(const struct list_elem* l, const struct list_elem* r, void* aux UNUSED);
+//==================================================================
 /* Optimization barrier.
  *
  * The compiler will not reorder operations across an

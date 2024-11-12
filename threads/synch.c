@@ -217,7 +217,37 @@ lock_acquire (struct lock *lock) {
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
 
-	sema_down (&lock->semaphore);
+	//==================================================================
+	//				Project 1 - Priority Donation
+	//------------------------------------------------------------------
+	/*	lock을 요청했을 때 이미 lock을 점유하고 있는 스레드(holder)가 있다면 holder에게 priority를 기부한다.
+		= holder의 donations 리스트에 현재 스레드의 donation_elem을 이용하여 들어간다.
+		이 때 priority를 기준으로 정렬이 되도록 들어간다.*/
+		struct thread* cur_thread = thread_current();
+		if(NULL != lock->holder)
+		{
+			cur_thread->wait_on_lock = lock; // 현재 스레드가 대기하는 lock으로 지정
+			// holder의 donations리스트에 priority를 기준으로 정렬되어 들어간다.
+			list_insert_ordered(&lock->holder->donations, &cur_thread->donation_elem, CompareDonationsByPriority, NULL);
+
+			//==================================================================
+			//				Project 1 - mlfqs
+			//------------------------------------------------------------------
+			/* mlfqs 에서는 priority를 직접 수정하지 않는다.*/
+			if(!thread_mlfqs)
+				DonatePriority(); // 현재 스레드의 priority를 holder에게 기부
+			//==================================================================
+		}
+	//==================================================================
+
+	sema_down (&lock->semaphore); // lock을 점유
+
+	//==================================================================
+	//				Project 1 - Priority Donation
+	//------------------------------------------------------------------
+	cur_thread->wait_on_lock = NULL; // lock을 점유했으니 대기하는 lock은 없음
+	//==================================================================
+
 	lock->holder = thread_current ();
 }
 
@@ -250,6 +280,35 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
+
+	//==================================================================
+	//				Project 1 - Priority Donation
+	//------------------------------------------------------------------
+	/* 	현재 스레드가 lock을 반환할 때 , 이 lock을 요청한 스레드가 있었고 donation을 받았다면
+		원래의 priority로 돌아가야 한다. 
+		lock을 반환하기 때문에 기부자 목록에 기부를 해준 스레드가 들어있을 필요가 없다.
+		donations에서 나에게 기부를 한 스레드를 제거해준다.*/
+
+	//==================================================================
+	//				Project 1 - mlfqs
+	//------------------------------------------------------------------
+	/* mlfqs를 사용할때는 donation관련 기능은 꺼야한다.*/
+	if(!thread_mlfqs)
+	{
+		struct thread* cur_thread = thread_current();
+
+		for(struct list_elem* iter = list_begin(&cur_thread->donations); iter != list_end(&cur_thread->donations);)
+		{
+			struct thread* donor = list_entry(iter, struct thread, donation_elem);
+			if(lock == donor->wait_on_lock)
+				iter = list_remove(iter);
+			else
+				iter = list_next(iter);
+		}
+
+		ThreadUpdatePriorityFromDonations();
+	}
+	//==================================================================
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
@@ -389,6 +448,18 @@ bool CompareSemaphoreByPriority(const struct list_elem* l, const struct list_ele
 	struct thread* thread_r = list_entry(list_begin(waiters_r), struct thread, elem);
 
 	return thread_l->priority > thread_r->priority;
+}
+
+//==================================================================
+
+
+//==================================================================
+//				Project 1 - Priority Donatnion
+//------------------------------------------------------------------
+/* Donation_elem을 holder의 donations에 넣을 때 priority를 기준으로 정렬하기 위한 함수 */
+bool CompareDonationsByPriority(const struct list_elem* l, const struct list_elem* r, void* aux UNUSED)
+{
+	return list_entry(l, struct thread, donation_elem)->priority > list_entry(r, struct thread, donation_elem)->priority; 
 }
 
 //==================================================================

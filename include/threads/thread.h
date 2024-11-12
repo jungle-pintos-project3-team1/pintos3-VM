@@ -28,6 +28,13 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
+//==================================================================
+//				Project 1 - mlfqs
+//------------------------------------------------------------------
+#define NICE_DEFAULT 0
+#define RECENT_CPU_DEFAULT 0
+#define LOAD_AVG_DEFAULT 0
+//==================================================================
 /* A kernel thread or user process.
  *
  * Each thread structure is stored in its own 4 kB page.  The
@@ -95,7 +102,31 @@ struct thread {
 	//==================================================================
 	//				Project 1 - Alarm Clock
 	//------------------------------------------------------------------
-	int64_t wakeup_ticks;
+	int64_t				wakeup_ticks;
+	//==================================================================
+
+	//==================================================================
+	//				Project 1 - Priority Donation
+	//------------------------------------------------------------------
+	int 				original_priority;	/* 기부 받은 후에 다시 원래의 우선순위로 돌아오기 위한 저장용 변수*/
+	struct lock* 		wait_on_lock;		/* 스레드가 현재 얻기 위해 기다리고 있는 lock, 스레드는 이 lock이 release되기를 기다린다.*/
+	struct list 		donations;			/* 스레드가 점유하고 있는 lock을 요청하면서 priority를 기부해준 스레드들을 연결 리스트 형태로 저장한다. */
+
+	/*	다른 스레드가 점유하고 있는 lock을 요청 했을 때 , 다른 스레드에게 priority를 기부하면서 해당 스레드의 donations에 들어갈 때 사용되는 elem
+		기존에 있던 elem은 ready_list와 sleep_list에서 사용중이므로 donations에서는 사용될 수 없다. 
+		elem은 한 리스트에서만 사용되어야 한다. ready_list와 sleep_list는 구조상 두 리스트에 공존 할 수 없기 때문에 
+		기존 코드에서는 하나의 elem만으로도 구현이 가능했다. 
+		lock과 마찬가지로 lock요청은 한 스레드당 하나만 가능하므로 이를 위한 elem도 하나만 있으면 된다.*/
+	struct list_elem	donation_elem;		
+	//==================================================================
+
+
+	//==================================================================
+	//				Project 1 - mlfqs
+	//------------------------------------------------------------------
+	int 				nice;
+	int 				recent_cpu;
+	struct list_elem	allelem;
 	//==================================================================
 
 	/* Shared between thread.c and synch.c. */
@@ -175,6 +206,30 @@ bool CompareThreadByPriority(const struct list_elem* l, const struct list_elem* 
 
 // yield를 할 때 우선순위를 기준으로 양보하는 함수 
 void ThreadYieldByPriority();
+
+//==================================================================
+
+//==================================================================
+//				Project 1 - Priority Donatnion
+//------------------------------------------------------------------
+
+// 현재 스레드가 원하는 lock을 가진 holder에게 현재 스레드의 priority를 기부하는 함수
+// 이 때 holder도 또다시 다른 lock의 release를 기다리고 있는지를 확인하여 연쇄적으로 
+// 모든 holder들의 priority를 모두 바꿔주어야 한다. 
+void DonatePriority();
+void ThreadUpdatePriorityFromDonations();
+//==================================================================
+
+
+//==================================================================
+//				Project 1 - mlfqs
+//------------------------------------------------------------------
+void mlfqsCalculatePriority (struct thread *th);
+void mlfqsCalculateRecentCPU (struct thread *th);
+void mlfqsCalculateLoadAvg (void);
+void mlfqsIncrementRecentCPU (void);
+void mlfqsRecalculateRecentCPU (void);
+void mlfqsRecalculatePrioirty (void);
 
 //==================================================================
 

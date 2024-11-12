@@ -135,10 +135,32 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
 
+
+	//==================================================================
+	//				Project 1 - mlfqs
+	//------------------------------------------------------------------
+
+	if (thread_mlfqs)
+	{
+    	mlfqsIncrementRecentCPU();
+
+    	if (ticks % 4 == 0)
+		{
+     		mlfqsRecalculatePrioirty();
+    	}
+
+		if (ticks % TIMER_FREQ == 0)
+		{
+        	mlfqsRecalculateRecentCPU();
+        	mlfqsCalculateLoadAvg();
+      	}
+  	}
+	//==================================================================
+
 	//==================================================================
 	//				Project 1 - Alarm Clock
 	//------------------------------------------------------------------
-	ThreadWakeUp(ticks); // 매 tick 마다 꺠울 스레드가 있는지를 확인하기 위해 호출 
+	ThreadWakeUp(ticks); // 매 tick 마다 깨울 스레드가 있는지를 확인하기 위해 호출 
 	//==================================================================
 }
 
