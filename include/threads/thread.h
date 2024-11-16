@@ -146,6 +146,9 @@ struct thread {
 	/* project2 - System Call */
 	int exit_status;
 
+	int fd_idx;
+	struct file **fdt;
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
