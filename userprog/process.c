@@ -625,6 +625,44 @@ void argument_stack(char **argv, int argc, struct intr_frame *if_)
     if_->R.rsi = if_->rsp + 8;
 }
 
+/* === project2 - System Call : File Descriptor === */
+/* 현재 스레드 fdt에 파일 추가 */
+int process_add_file(struct file *f)
+{
+	struct thread *curr = thread_current();
+	struct file **fdt = curr->fdt;
+
+	if(curr->fd_idx >= FDCOUNT_LIMIT)
+		return -1;
+
+	fdt[curr->fd_idx++] = f;
+
+	return curr->fd_idx - 1;
+}
+
+/* 현재 스레드의 fd번째 파일 정보 얻기 */
+struct file *process_get_file(int fd)
+{
+	struct thread *curr = thread_current();
+
+	if(fd>= FDCOUNT_LIMIT)
+		return NULL;
+
+	return curr->fdt[fd];
+}
+
+/* 현재 스레드의 fdt에서 파일 삭제 */
+int process_close_file(int fd)
+{
+	struct thread *curr = thread_current();
+	
+	if (fd >= FDCOUNT_LIMIT)
+		return -1;
+	
+	curr->fdt[fd] = NULL;
+	return 0;
+}
+
 #else
 /* From here, codes will be used after project 3.
  * If you want to implement the function for only project 2, implement it on the
