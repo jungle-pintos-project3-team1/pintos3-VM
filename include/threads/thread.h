@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -146,8 +147,12 @@ struct thread {
 	/* project2 - System Call */
 	int exit_status;
 
-	int fd_idx;
-	struct file **fdt;
+	int fd_idx;				// 파일 디스크립터 인덱스
+	struct file **fdt;		// 파일 디스크립터 테이블
+	struct file *run_file;	// 실행중인 파일
+
+	struct semaphore exit_sema;		// 자식 프로세스 종료 signal
+	struct semaphore wait_sema;		// exit_sema를 기다릴때 사용한다.
 
 #endif
 #ifdef VM

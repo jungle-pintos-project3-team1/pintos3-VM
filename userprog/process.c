@@ -240,7 +240,18 @@ process_exit (void) {
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
-	process_cleanup ();
+	/* === project2 - System Call : File Descriptor ===*/
+	for (int fd = 0; fd < curr->fd_idx; fd++)
+		close(fd);
+	palloc_free_multiple(curr->fdt, FDT_PAGES);
+
+	file_close(curr->run_file);
+
+	process_cleanup();
+
+	sema_up(&curr->wait_sema);
+
+	sema_down(&curr->exit_sema);
 }
 
 /* Free the current process's resources. */
