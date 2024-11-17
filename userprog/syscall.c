@@ -160,3 +160,38 @@ int filesize(int fd) {
 	return file_length(file);
 }
 
+/* 열린 파일의 데이터를 읽는 시스템 콜 */
+int read(int fd, void *buffer, unsigned length)
+{
+	check_address(buffer);
+
+	if (fd == 0){
+		int i =0;
+		char c;
+		unsigned char *buf = buffer;
+
+		for (; i < length; i++){
+			c = input_getc();		// 키보드 입력 한 글자 읽기
+			*buf++ = c;				// 입력받은 문자를 버퍼에 저장
+			if(c == '\0')			// 널 종단 문자일 경우 중단
+				break;
+		}
+
+		return i;
+	}
+
+	if(fd < 3)
+		return -1;
+
+	struct file *file = process_get_file(fd);
+	off_t bytes = -1;
+
+	if (file == NULL)
+		return -1;
+
+	lock_acquire(&filesys_lock);
+	bytes = file_read(file, buffer, length);
+	lock_release(&filesys_lock);
+
+	return bytes;
+}
