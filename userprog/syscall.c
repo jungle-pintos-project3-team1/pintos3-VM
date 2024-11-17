@@ -44,7 +44,7 @@ syscall_init (void) {
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
 
 	/* === project2 - System Call : read & write 용 Lock 초기화=== */
-	lock_init(&filesys.lock);
+	lock_init(&filesys_lock);
 }
 
 /* The main system call interface */
@@ -149,3 +149,14 @@ int open(const char *file){
 
 	return fd;
 }
+
+/* 파일의 크기를 알려주는 시스템 콜 */
+int filesize(int fd) {
+	struct file *file = process_get_file(fd);
+
+	if (file == NULL)
+		return -1;
+
+	return file_length(file);
+}
+
