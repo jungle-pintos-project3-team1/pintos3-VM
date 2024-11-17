@@ -222,3 +222,15 @@ int write(int fd, const void *buffer, unsigned length)
 
 	return bytes;
 }
+
+/* 열린 파일의 위치(offset)을 이동하는 시스템 콜 */
+void seek(int fd, unsigned position)
+{
+	struct file *file = process_get_file(fd);
+
+	if(fd < 3 || file == NULL)
+		return;
+
+	file_seek(file, position);
+}
+
