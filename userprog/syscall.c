@@ -195,3 +195,30 @@ int read(int fd, void *buffer, unsigned length)
 
 	return bytes;
 }
+
+/* 열린 파일에 데이터를 쓰는 시스템 콜 */
+int write(int fd, const void *buffer, unsigned length)
+{
+	check_address(buffer);
+
+	off_t bytes = -1;
+
+	if (fd <= 0)
+		return -1;
+	
+	if (fd < 3){
+		putbuf(buffer, length);
+		return length;
+	}
+
+	struct file *file = process_get_file(fd);
+
+	if (file == NULL)
+		return -1;
+
+	lock_acquire(&filesys_lock);
+	bytes = file_write(file, buffer, length);
+	lock_release(&filesys_lock);
+
+	return bytes;
+}
