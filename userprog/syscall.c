@@ -234,3 +234,13 @@ void seek(int fd, unsigned position)
 	file_seek(file, position);
 }
 
+/* 열린 파일의 위치(offset)을 조회하는 시스템 콜 */
+int tell(int fd)
+{
+	struct file *file = process_add_file(fd);
+
+	if (fd < 3 || file == NULL)
+		return -1;
+
+	return file_tell(file);
+}
