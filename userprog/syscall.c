@@ -7,6 +7,7 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
+#include "userprog/process.c"
 
 /** #Project 2: System Call */
 #include "filesys/filesys.h"
@@ -14,6 +15,8 @@
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
+/* === project2 - System Call === */
+struct lock filesys_lock;
 
 /* System call.
  *
@@ -39,6 +42,9 @@ syscall_init (void) {
 	 * mode stack. Therefore, we masked the FLAG_FL. */
 	write_msr(MSR_SYSCALL_MASK,
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
+
+	/* === project2 - System Call : read & write 용 Lock 초기화=== */
+	lock_init(&filesys.lock);
 }
 
 /* The main system call interface */
@@ -125,4 +131,21 @@ bool remove(const char *file){
 	check_address(file);
 
 	return filesys_remove(file);
+}
+
+/* 파일을 여는 시스템 콜 */
+int open(const char *file){
+	check_address(file);
+
+	struct file *newfile = filesys_open(file);
+
+	if (newfile == NULL)
+		return -1;
+
+	int fd = process_add_file(newfile);
+
+	if (fd == -1)
+		file_close(newfile);
+
+	return fd;
 }
