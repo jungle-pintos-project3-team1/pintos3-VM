@@ -151,6 +151,11 @@ struct thread {
 	struct file **fdt;		// 파일 디스크립터 테이블
 	struct file *run_file;	// 실행중인 파일
 
+	struct intr_frame parent_if;	// 부모 프로세스 if
+	struct list child_list;
+	struct list_elem chile_elem;
+
+	struct semaphore fork_sema;		// fork가 완료될 때 signal
 	struct semaphore exit_sema;		// 자식 프로세스 종료 signal
 	struct semaphore wait_sema;		// exit_sema를 기다릴때 사용한다.
 

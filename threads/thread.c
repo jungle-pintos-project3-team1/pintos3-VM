@@ -1,3 +1,4 @@
+#define USERPROG
 //==================================================================
 //				Project 1 - mlfqs
 //------------------------------------------------------------------
@@ -258,6 +259,8 @@ thread_create (const char *name, int priority,
 	t->fdt[0] = 0;
 	t->fdt[1] = 1;
 	t->fdt[2] = 2;
+
+	list_push_back(&thread_current()->child_list, &t->chile_elem);
 
 #endif
 
@@ -572,6 +575,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 
 	/* === project2 - System Call === */
 	t->exit_status = 0;
+
+	list_init(&t->child_list);
+	sema_init(&t->fork_sema, 0);
+	sema_init(&t->exit_sema, 0);
+	sema_init(&t->wait_sema, 0);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
