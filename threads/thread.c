@@ -250,7 +250,7 @@ thread_create (const char *name, int priority,
 
 	/* === Project2 - System Call : 구조체 초기화 === */
 #ifdef USERPROG
-	t->fdt = palloc_init_multiple(PAL_ZERO, FDT_PAGES);
+	t->fdt = palloc_get_multiple(PAL_ZERO, FDT_PAGES);
 	if (t->fdt == NULL)
 		return TID_ERROR;
 	t->exit_status = 0;

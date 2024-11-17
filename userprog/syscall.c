@@ -11,6 +11,7 @@
 
 /** #Project 2: System Call */
 #include "filesys/filesys.h"
+#include "threads/palloc.h"
 
 
 void syscall_entry (void);
@@ -56,13 +57,13 @@ syscall_handler (struct intr_frame *f UNUSED) {
 	switch(sys_number)
 	{
 		case SYS_HALT:
-			half();
+			halt();
 			break;
 		case SYS_EXIT:
 			exit(f->R.rdi);
 			break;
 		case SYS_FORK:
-			f->R.rax = fort(f->R.rdi);
+			f->R.rax = fork(f->R.rdi);
 			break;
 		case SYS_EXEC:
 			f->R.rax = exec(f->R.rdi);
@@ -116,7 +117,29 @@ void exit(int status){
 	struct thread *t = thread_current();
 	t->exit_status = status;
 	printf("%s: exit(%d)\n", t->name, t->exit_status); // Process Tremination Message
-	thread_eixt();
+	thread_exit();
+}
+
+/* 현재 프로세스를 볼제해서 새로운 프로세스 생성 */
+pid_t fork(const char *thread_name) {
+    check_address(thread_name);
+
+    return process_fork(thread_name, NULL);
+}
+
+/* 새로운 프로그램 실행 */
+int exec(const char *cmd_line) {
+    check_address(cmd_line);
+
+    off_t size = strlen(cmd_line) + 1;
+    char *cmd_copy = palloc_get_page(PAL_ZERO);
+
+    if (cmd_copy == NULL)
+        return -1;
+
+    memcpy(cmd_copy, cmd_line, size);
+
+    return process_exec(cmd_copy);  // process_exec 성공시 리턴 값 없음 (do_iret)
 }
 
 /* 파일을 생성하는 시스템 콜 */
