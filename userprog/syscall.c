@@ -1,3 +1,5 @@
+#define USERPROG
+
 #include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
@@ -83,7 +85,6 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		case SYS_FILESIZE:
 			f->R.rax = filesize(f->R.rdi);
 			break;
-			// 브레이크땐스 시작
 		case SYS_READ:
 			f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
 			break;
