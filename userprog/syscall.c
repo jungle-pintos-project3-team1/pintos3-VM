@@ -7,7 +7,7 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
-#include "userprog/process.c"
+#include "userprog/process.h"
 
 /** #Project 2: System Call */
 #include "filesys/filesys.h"
