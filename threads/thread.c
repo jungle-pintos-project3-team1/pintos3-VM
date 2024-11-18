@@ -260,7 +260,7 @@ thread_create (const char *name, int priority,
 	t->fdt[1] = 1;
 	t->fdt[2] = 2;
 
-	list_push_back(&thread_current()->child_list, &t->chile_elem);
+	list_push_back(&thread_current()->child_list, &t->child_elem);
 
 #endif
 
