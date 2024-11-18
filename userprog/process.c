@@ -184,7 +184,7 @@ process_exec (void *f_name) {
 	/* === project2 - Command Line Parsing === */
 	char *ptr, *arg;
 	int arg_cnt = 0;
-	char *arg_list[32];
+	char *arg_list[64];
 
 	for (arg = strtok_r(file_name, " ", &ptr); arg != NULL; arg = strtok_r(NULL, " ", &ptr))
         arg_list[arg_cnt++] = arg;
@@ -201,7 +201,7 @@ process_exec (void *f_name) {
 		return -1;
 
 	/* === project2 - Command Line Parsing === */
-	hex_dump(_if.rsp, _if.rsp, USER_STACK - _if.rsp, true); // 0x47480000	
+	// hex_dump(_if.rsp, _if.rsp, USER_STACK - _if.rsp, true); // 0x47480000	
 
 
 	/* Start switched process. */
@@ -226,7 +226,7 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       implementing the process_wait. */
 
 	/* === project2 - Command Line Parsing === */
-	while(1)
+	for (int i = 0; i < 1000000000; i++)
 		;
 	return -1;
 }
@@ -618,7 +618,7 @@ void argument_stack(char **argv, int argc, struct intr_frame *if_)
         arg_addr[i] = if_->rsp;
     }
 
-    while (!(if_->rsp % 8))
+    while (if_->rsp % 8)
         *(uint8_t *)(--if_->rsp) = 0;
 
     for (int i = argc; i >= 0; i--) {
