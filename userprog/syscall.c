@@ -140,7 +140,10 @@ int exec(const char *cmd_line) {
 
     memcpy(cmd_copy, cmd_line, size);
 
-    return process_exec(cmd_copy);  // process_exec 성공시 리턴 값 없음 (do_iret)
+	if (process_exec(cmd_copy) == -1)
+		return -1;
+
+	return 0;	// process_exec 성공시 리턴 값 없음 (do_iret)
 }
 
 /* 파일을 생성하는 시스템 콜 */
