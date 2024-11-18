@@ -52,8 +52,8 @@ process_create_initd (const char *file_name) {
 	strlcpy (fn_copy, file_name, PGSIZE);
 
 	/* === project2 - Command Line Parsing === */
-	// char *ptr;
-    // strtok_r(file_name, " ", &ptr);
+	char *ptr;
+    strtok_r(file_name, " ", &ptr);
 
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
