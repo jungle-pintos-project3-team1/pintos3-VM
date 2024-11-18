@@ -283,3 +283,7 @@ void close(int fd)
 
 	file_close(file);
 }
+
+int wait(pid_t tid){
+	return process_wait(tid);
+}
