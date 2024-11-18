@@ -150,11 +150,12 @@ __do_fork (void *aux) {
 	struct thread *parent = (struct thread *) aux;
 	struct thread *current = thread_current ();
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if;
+	struct intr_frame *parent_if = &parent->parent_if;
 	bool succ = true;
 
 	/* 1. Read the cpu context to local stack. */
 	memcpy (&if_, parent_if, sizeof (struct intr_frame));
+	if_.R.rax = 0;		// 자식 프로세스의 return value
 
 	/* 2. Duplicate PT */
 	current->pml4 = pml4_create();
@@ -176,14 +177,26 @@ __do_fork (void *aux) {
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
+	if (parent->fd_idx >= FDCOUNT_LIMIT)
+		goto error;
 
-	process_init ();
+	current->fd_idx = parent->fd_idx; 	// fdt 및 idx 복제
+	for (int fd = 3; fd < parent->fd_idx; fd++){
+		if(parent->fdt[fd] == NULL)
+			continue;
+		current->fdt[fd] = file_duplicate(parent->fdt[fd]);
+	}
+
+	sema_up(&current->fork_sema);
+
+	process_init();
 
 	/* Finally, switch to the newly created process. */
 	if (succ)
 		do_iret (&if_);
 error:
-	thread_exit ();
+	sema_up(&current->fork_sema);
+	thread_exit();
 }
 
 /* Switch the current execution context to the f_name.
