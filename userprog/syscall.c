@@ -97,6 +97,9 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		case SYS_TELL:
 			f->R.rax = tell(f->R.rdi);
 			break;
+		case SYS_CLOSE:
+			close(f->R.rdi);
+			break;
 		default:
 			exit(-1);
 		}
@@ -123,9 +126,9 @@ void exit(int status){
 
 /* 현재 프로세스를 볼제해서 새로운 프로세스 생성 */
 pid_t fork(const char *thread_name) {
-    check_address(thread_name);
+	check_address(thread_name);
 
-    return process_fork(thread_name, NULL);
+	return process_fork(thread_name, NULL);
 }
 
 /* 새로운 프로그램 실행 */
@@ -278,7 +281,6 @@ void close(int fd)
 
 	if(fd < 3 || file == NULL)
 		return -1;
-
 	process_close_file(fd);
 
 	file_close(file);
