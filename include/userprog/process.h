@@ -17,5 +17,6 @@ void argument_stack(char **argv, int argc, struct intr_frame *if_);
 int process_add_file(struct file *f);
 struct file *process_get_file(int fd);
 int process_close_file(int fd);
+struct thread *get_child_process(int pid);
 
 #endif /* userprog/process.h */

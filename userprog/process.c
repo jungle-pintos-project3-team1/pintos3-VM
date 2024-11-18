@@ -674,6 +674,22 @@ int process_close_file(int fd)
 	return 0;
 }
 
+/* 현재 프로세스의 자식 리스트를 검색해서 해당 Pid에 맞는 프로세스 디스크립터를 반환 */
+struct thread *get_child_process(int pid) 
+{
+	struct thread *curr = thread_current();
+	struct thread *t;
+
+	for (struct list_elem *e = list_begin(&curr->child_list); e != list_end(&curr->child_list); e = list_next(e)){
+		t = list_entry(e, struct thread, child_elem);
+
+		if(pid == t->tid)
+			return t;
+	}
+
+	return NULL;
+}
+
 #else
 /* From here, codes will be used after project 3.
  * If you want to implement the function for only project 2, implement it on the

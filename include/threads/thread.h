@@ -153,7 +153,7 @@ struct thread {
 
 	struct intr_frame parent_if;	// 부모 프로세스 if
 	struct list child_list;
-	struct list_elem chile_elem;
+	struct list_elem child_elem;
 
 	struct semaphore fork_sema;		// fork가 완료될 때 signal
 	struct semaphore exit_sema;		// 자식 프로세스 종료 signal
