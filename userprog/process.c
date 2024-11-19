@@ -278,7 +278,7 @@ process_wait (tid_t child_tid UNUSED) {
 	// /* === project2 - Command Line Parsing === */
 	// for (int i = 0; i < 1000000000; i++)
 	// 	;
-	return -1;
+	return exit_status;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
