@@ -254,11 +254,13 @@ thread_create (const char *name, int priority,
 	t->fdt = palloc_get_multiple(PAL_ZERO, FDT_PAGES);
 	if (t->fdt == NULL)
 		return TID_ERROR;
-	t->exit_status = 0;
+		
+	t->exit_status = 0;		// exit_status 초기화
+
 	t->fd_idx = 3;
-	t->fdt[0] = 0;
-	t->fdt[1] = 1;
-	t->fdt[2] = 2;
+	t->fdt[0] = 0;		// stdin 예약 자리
+	t->fdt[1] = 1;		// stdout 예약 자리
+	t->fdt[2] = 2;		// stderr 예약 자리
 
 	list_push_back(&thread_current()->child_list, &t->child_elem);
 
@@ -574,7 +576,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	//==================================================================
 
 	/* === project2 - System Call === */
-	t->exit_status = 0;
+	t->run_file = NULL;
 
 	list_init(&t->child_list);
 	sema_init(&t->fork_sema, 0);
