@@ -19,6 +19,9 @@ struct file *process_get_file(int fd);
 int process_close_file(int fd);
 struct thread *get_child_process(int pid);
 
+/* === project2 - Extend File Descriptor === */
+#define STDIN 0x1
+#define STDOUT 0x2
 #define STDERR 0x3
 
 #endif /* userprog/process.h */
