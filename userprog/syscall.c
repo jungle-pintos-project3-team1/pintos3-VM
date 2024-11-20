@@ -167,6 +167,7 @@ bool remove(const char *file){
 int open(const char *file){
 	check_address(file);
 
+	lock_acquire((&filesys_lock));
 	struct file *newfile = filesys_open(file);
 
 	if (newfile == NULL)
@@ -176,6 +177,8 @@ int open(const char *file){
 
 	if (fd == -1)
 		file_close(newfile);
+
+	lock_release((&filesys_lock));
 
 	return fd;
 }
