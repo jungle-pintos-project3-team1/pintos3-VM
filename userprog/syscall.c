@@ -100,6 +100,9 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		case SYS_CLOSE:
 			close(f->R.rdi);
 			break;
+		case SYS_DUP2:
+            f->R.rax = dup2(f->R.rdi, f->R.rsi);
+            break;
 		default:
 			exit(-1);
 		}
@@ -291,4 +294,28 @@ void close(int fd)
 
 int wait(pid_t tid){
 	return process_wait(tid);
+}
+
+int dup2(int oldfd, int newfd) {
+    if (oldfd < 0 || newfd < 0)
+        return -1;
+
+    struct file *oldfile = process_get_file(oldfd);
+
+    if (oldfile == NULL)
+        return -1;
+
+    if (oldfd == newfd)
+        return newfd;
+
+    struct file *newfile = process_get_file(newfd);
+
+    if (oldfile == newfile)
+        return newfd;
+
+    close(newfd);
+
+    newfd = process_insert_file(newfd, oldfile);
+
+    return newfd;
 }

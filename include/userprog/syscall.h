@@ -18,6 +18,7 @@ int read(int fd, void *buffer, unsigned length);
 int write(int fd, const void *buffer, unsigned length);
 int tell(int fd);
 void close(int fd);
+int dup2(int oldfd, int newfd);
 
 void syscall_init(void);
 #endif /* userprog/syscall.h */

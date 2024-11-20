@@ -20,6 +20,8 @@ int process_close_file(int fd);
 struct thread *get_child_process(int pid);
 
 /* === project2 - Extend File Descriptor === */
+process_insert_file(int fd, struct file *f);
+
 #define STDIN 0x1
 #define STDOUT 0x2
 #define STDERR 0x3
