@@ -28,6 +28,9 @@ static bool load (const char *file_name, struct intr_frame *if_);
 static void initd (void *f_name);
 static void __do_fork (void *);
 
+/* Project 2 - System Call */
+struct lock filesys_lock;  // 파일 읽기/쓰기 용 lock
+
 /* General process initializer for initd and other process. */
 static void
 process_init (void) {
@@ -427,6 +430,9 @@ load (const char *file_name, struct intr_frame *if_) {
 		goto done;
 	}
 
+	t->run_file = file;   /** #Project 2: System Call - 파일 실행 적재 */
+	file_deny_write(file); /** #Project 2: Denying Writes to Executables */
+
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
 			|| memcmp (ehdr.e_ident, "\177ELF\2\1\1", 7)
@@ -507,6 +513,7 @@ load (const char *file_name, struct intr_frame *if_) {
 done:
 	/* We arrive here whether the load is successful or not. */
 	// file_close (file);
+	// lock_release(&filesys.lock);
 	return success;
 }
 
