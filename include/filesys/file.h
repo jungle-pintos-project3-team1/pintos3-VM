@@ -2,11 +2,21 @@
 #define FILESYS_FILE_H
 
 #include "filesys/off_t.h"
+#include <stdbool.h>
 
 struct inode;
 
+/* === project2 - Extend File Descriptor === */
+struct file {
+    struct inode *inode;    /* File's inode */
+    off_t pos;              /* Current position */
+    bool deny_write;        /* Has file_deny_write() benn called? */
+
+    int dup_count;
+};
+
 /* Opening and closing files. */
-struct file *file_open (struct inode *);
+struct file *file_open(struct inode *);
 struct file *file_reopen (struct file *);
 struct file *file_duplicate (struct file *file);
 void file_close (struct file *);
