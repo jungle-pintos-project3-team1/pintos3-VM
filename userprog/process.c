@@ -155,9 +155,9 @@ __do_fork (void *aux) {
 	struct intr_frame if_;
 	struct thread *parent = (struct thread *) aux;
 	struct thread *current = thread_current ();
+	bool succ = true;
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 	struct intr_frame *parent_if = &parent->parent_if;
-	bool succ = true;
 
 	/* 1. Read the cpu context to local stack. */
 	memcpy (&if_, parent_if, sizeof (struct intr_frame));
@@ -187,10 +187,17 @@ __do_fork (void *aux) {
 		goto error;
 
 	current->fd_idx = parent->fd_idx; 	// fdt 및 idx 복제
-	for (int fd = 3; fd < parent->fd_idx; fd++){
-		if(parent->fdt[fd] == NULL)
-			continue;
-		current->fdt[fd] = file_duplicate(parent->fdt[fd]);
+	struct file *file;
+	for (int fd = 0; fd < FDCOUNT_LIMIT; fd++)
+	{
+		file = parent->fdt[fd];
+        if (file == NULL)
+            continue;
+
+        if (file > STDERR)
+            current->fdt[fd] = file_duplicate(file);
+        else
+            current->fdt[fd] = file;
 	}
 
 	sema_up(&current->fork_sema);
@@ -202,7 +209,7 @@ __do_fork (void *aux) {
 		do_iret (&if_);
 error:
 	sema_up(&current->fork_sema);
-	thread_exit();
+	exit(TID_ERROR);
 }
 
 /* Switch the current execution context to the f_name.
@@ -297,7 +304,7 @@ process_exit (void) {
 	for (int fd = 0; fd < curr->fd_idx; fd++)
 		close(fd);
 	palloc_free_multiple(curr->fdt, FDT_PAGES);
-
+	
 	file_close(curr->run_file);
 
 	process_cleanup();

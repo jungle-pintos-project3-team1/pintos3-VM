@@ -19,4 +19,6 @@ struct file *process_get_file(int fd);
 int process_close_file(int fd);
 struct thread *get_child_process(int pid);
 
+#define STDERR 0x3
+
 #endif /* userprog/process.h */
